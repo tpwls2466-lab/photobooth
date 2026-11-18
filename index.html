@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>포토부스</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f1ea;--fg:#1d2433;--card:#fff;--line:#d9d4c7;--pri:#1f4e79;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141a26;--fg:#f1eee6;--card:#1f2736;--line:#33405a;--pri:#8fb8e6}}
+:root[data-theme="dark"]{--bg:#141a26;--fg:#f1eee6;--card:#1f2736;--line:#33405a;--pri:#8fb8e6}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:"Jua","Apple SD Gothic Neo","Noto Sans KR",sans-serif}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
+section{min-height:100vh;padding:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;text-align:center}
+section[hidden]{display:none}
+h1{font-size:44px;margin:0;font-weight:400}
+p{margin:0;font-size:20px;opacity:.75}
+button{font:inherit;font-size:22px;border:2px solid var(--line);background:var(--card);color:var(--fg);border-radius:18px;padding:14px 22px;min-height:56px}
+button.on{border-color:var(--pri);background:var(--pri);color:#fff}
+button:focus-visible{outline:3px solid var(--pri);outline-offset:2px}
+.themes{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
+.theme{width:min(300px,80vw);padding:34px 20px;font-size:30px;color:#fff;border:0}
+.a{background:#1f4e79}.x{background:#9b1c1c}
+.cam{position:relative;width:min(92vw,720px);aspect-ratio:4/3;background:#000;border-radius:24px;overflow:hidden}
+.cam video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+#cnt{position:absolute;inset:0;display:grid;place-items:center;font-size:200px;color:#fff;text-shadow:0 4px 24px rgba(0,0,0,.6)}
+#fl{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .35s;z-index:20}
+#result{flex-direction:row;flex-wrap:wrap;align-items:flex-start;justify-content:center}
+.stripwrap{flex:0 1 auto}
+#strip,#pv{height:min(84vh,980px);max-width:92vw;width:auto;border-radius:6px;box-shadow:0 6px 28px rgba(0,0,0,.28);background:#fff;touch-action:manipulation}
+.panel{flex:1 1 320px;max-width:460px;display:flex;flex-direction:column;gap:14px;text-align:left}
+.panel h2{margin:0;font-size:22px;font-weight:400;opacity:.8}
+.row{display:flex;flex-wrap:wrap;gap:10px}
+.row button{padding:10px 16px;font-size:20px}
+.stk button{font-size:34px;padding:6px 12px;min-height:56px}
+.note{font-size:16px;opacity:.65}
+</style>
+</head>
+<body>
+<section id="home">
+  <h1>포토부스</h1>
+  <p>행사를 고르고 촬영을 시작하세요. 사진은 4장 찍어요.</p>
+  <p id="err" style="color:#c0392b;font-size:18px;opacity:1"></p>
+  <div class="themes">
+    <button class="theme a" onclick="start('anniv')">창립기념주일</button>
+    <button class="theme x" onclick="start('xmas')">크리스마스</button>
+  </div>
+</section>
+
+<section id="shoot" hidden>
+  <p id="prog"></p>
+  <div class="cam"><video id="v" playsinline muted></video><div id="cnt"></div></div>
+  <p>카메라를 보고 웃어주세요</p>
+</section>
+
+<section id="result" hidden>
+  <div class="stripwrap">
+    <canvas id="strip" onclick="place(event)"></canvas>
+    <canvas id="pv" hidden></canvas>
+  </div>
+  <div class="panel">
+    <h2>필터</h2>
+    <div class="row" id="filters"></div>
+    <h2>스티커 (사진을 눌러 붙이세요)</h2>
+    <div class="row stk" id="stk"></div>
+    <div class="row"><button onclick="undo()">스티커 지우기</button><button id="pvbtn" onclick="togglePv()">인쇄 미리보기</button></div>
+    <p class="note" id="pvnote" hidden>프린터는 흑백 점으로 인쇄해요. 이 화면이 실제 출력 모양이에요.</p>
+    <div class="row"><button onclick="show('home')">처음으로</button><button disabled title="다음 단계에서 연결해요">인쇄 (준비 중)</button></div>
+  </div>
+</section>
+<div id="fl"></div>
+
+<script>
+const T={
+  anniv:{n:"창립기념주일",c:"#1f4e79",a:"#e0b43c",s:["⛪","🕊️","🎉","🙏","💐","✨"]},
+  xmas:{n:"메리 크리스마스",c:"#9b1c1c",a:"#2f7d4f",s:["🎄","⭐","🎅","🎁","❄️","🔔"]}
+};
+const F=[["none","원본"],["bw","흑백"],["sepia","세피아"],["warm","따뜻하게"],["bright","밝게"]];
+let theme="anniv",shots=[],filter="none",stickers=[],cur=null,stream=null;
+const $=id=>document.getElementById(id);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function show(id){["home","shoot","result"].forEach(s=>$(s).hidden=s!==id)}
+
+async function start(t){
+  theme=t;shots=[];stickers=[];filter="none";$("err").textContent="";
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user",width:{ideal:1280},height:{ideal:960}},audio:false})}
+  catch(e){$("err").textContent="카메라를 켤 수 없어요 ("+((e&&e.name)||"오류")+"). 앱 안의 미리보기 화면에서는 카메라가 막힐 수 있어요. 별도 브라우저 창에서 열어보세요.";return}
+  const v=$("v");v.srcObject=stream;show("shoot");await v.play();
+  for(let i=0;i<4;i++){
+    $("prog").textContent=(i+1)+" / 4";
+    for(let n=3;n>0;n--){$("cnt").textContent=n;await sleep(1000)}
+    $("cnt").textContent="";flash();shots.push(grab());await sleep(700)
+  }
+  stream.getTracks().forEach(k=>k.stop());
+  try{await document.fonts.load("52px Jua")}catch(e){}
+  cur=T[theme].s[0];buildPanel();draw();$("pv").hidden=true;$("strip").hidden=false;$("pvnote").hidden=true;show("result")
+}
+function flash(){const f=$("fl");f.style.opacity=1;setTimeout(()=>f.style.opacity=0,120)}
+function grab(){
+  const v=$("v"),W=640,H=480,c=document.createElement("canvas");c.width=W;c.height=H;
+  const x=c.getContext("2d"),vw=v.videoWidth,vh=v.videoHeight,r=W/H;
+  let sw=vw,sh=vw/r;if(sh>vh){sh=vh;sw=vh*r}
+  x.translate(W,0);x.scale(-1,1);x.drawImage(v,(vw-sw)/2,(vh-sh)/2,sw,sh,0,0,W,H);return c
+}
+function fx(src){
+  const c=document.createElement("canvas");c.width=src.width;c.height=src.height;
+  const x=c.getContext("2d");x.drawImage(src,0,0);
+  if(filter!=="none"){
+    const d=x.getImageData(0,0,c.width,c.height),p=d.data;
+    for(let i=0;i<p.length;i+=4){
+      let r=p[i],g=p[i+1],b=p[i+2];const l=.3*r+.59*g+.11*b;
+      if(filter==="bw"){r=g=b=l*1.05}
+      else if(filter==="sepia"){r=l*1.07+20;g=l*.95+8;b=l*.75}
+      else if(filter==="warm"){r*=1.1;g*=1.03;b*=.88}
+      else if(filter==="bright"){r=r*1.15+15;g=g*1.15+15;b=b*1.15+15}
+      p[i]=r;p[i+1]=g;p[i+2]=b
+    }
+    x.putImageData(d,0,0)
+  }
+  return c
+}
+const W=704,H=2200;
+function draw(){
+  const t=T[theme],c=$("strip"),x=c.getContext("2d");
+  c.width=W;c.height=H;
+  x.fillStyle="#fff";x.fillRect(0,0,W,H);
+  x.fillStyle=t.c;x.fillRect(0,0,W,110);
+  x.fillStyle="#fff";x.font="52px Jua, sans-serif";x.textAlign="center";x.textBaseline="middle";
+  x.fillText(t.n,W/2,58);
+  shots.forEach((s,i)=>x.drawImage(fx(s),32,126+i*496,640,480));
+  x.fillStyle=t.c;x.font="34px Jua, sans-serif";
+  x.fillText(new Date().toLocaleDateString("ko-KR"),W/2,2150);
+  x.font="96px sans-serif";
+  stickers.forEach(s=>x.fillText(s.e,s.x,s.y));
+  x.strokeStyle=t.a;x.lineWidth=10;x.strokeRect(5,5,W-10,H-10);
+  if(!$("pv").hidden)dither()
+}
+function buildPanel(){
+  $("filters").innerHTML="";
+  F.forEach(([k,n])=>{const b=document.createElement("button");b.textContent=n;b.className=k===filter?"on":"";
+    b.onclick=()=>{filter=k;[...$("filters").children].forEach(e=>e.className="");b.className="on";draw()};$("filters").appendChild(b)});
+  $("stk").innerHTML="";
+  T[theme].s.forEach(e=>{const b=document.createElement("button");b.textContent=e;b.className=e===cur?"on":"";
+    b.onclick=()=>{cur=e;[...$("stk").children].forEach(k=>k.className="");b.className="on"};$("stk").appendChild(b)})
+}
+function place(ev){
+  if(!$("pv").hidden)return;
+  const c=$("strip"),r=c.getBoundingClientRect();
+  stickers.push({e:cur,x:(ev.clientX-r.left)*W/r.width,y:(ev.clientY-r.top)*H/r.height});draw()
+}
+function undo(){stickers.pop();draw()}
+function togglePv(){
+  const on=$("pv").hidden;$("pv").hidden=!on;$("strip").hidden=on;$("pvnote").hidden=!on;
+  $("pvbtn").textContent=on?"편집으로 돌아가기":"인쇄 미리보기";if(on)dither()
+}
+function dither(){
+  const s=$("strip"),w=384,h=Math.round(s.height*w/s.width),o=$("pv");
+  o.width=w;o.height=h;const x=o.getContext("2d");x.drawImage(s,0,0,w,h);
+  const d=x.getImageData(0,0,w,h),p=d.data,g=new Float32Array(w*h);
+  for(let i=0;i<w*h;i++)g[i]=.3*p[i*4]+.59*p[i*4+1]+.11*p[i*4+2];
+  for(let y=0;y<h;y++)for(let u=0;u<w;u++){
+    const i=y*w+u,old=g[i],n=old<128?0:255,e=old-n;g[i]=n;
+    if(u+1<w)g[i+1]+=e*7/16;
+    if(y+1<h){if(u>0)g[i+w-1]+=e*3/16;g[i+w]+=e*5/16;if(u+1<w)g[i+w+1]+=e/16}
+  }
+  for(let i=0;i<w*h;i++){p[i*4]=p[i*4+1]=p[i*4+2]=g[i];p[i*4+3]=255}
+  x.putImageData(d,0,0);window.printBitmap=o
+}
+</script>
+</body>
+</html>
