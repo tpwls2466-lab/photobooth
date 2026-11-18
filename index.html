@@ -7,102 +7,129 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#f4f1ea;--fg:#1d2433;--card:#fff;--line:#d9d4c7;--pri:#1f4e79;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141a26;--fg:#f1eee6;--card:#1f2736;--line:#33405a;--pri:#8fb8e6}}
-:root[data-theme="dark"]{--bg:#141a26;--fg:#f1eee6;--card:#1f2736;--line:#33405a;--pri:#8fb8e6}
+:root{--bg:#f4f1ea;--fg:#1d2433;--card:#fff;--line:#d9d4c7;--pri:#9b1c1c;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141a26;--fg:#f1eee6;--card:#1f2736;--line:#33405a;--pri:#d9534f}}
+:root[data-theme="dark"]{--bg:#141a26;--fg:#f1eee6;--card:#1f2736;--line:#33405a;--pri:#d9534f}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--fg);font-family:"Jua","Apple SD Gothic Neo","Noto Sans KR",sans-serif}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
 section{min-height:100vh;padding:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;text-align:center}
 section[hidden]{display:none}
-h1{font-size:44px;margin:0;font-weight:400}
+h1{font-size:52px;margin:0;font-weight:400}
 p{margin:0;font-size:20px;opacity:.75}
 button{font:inherit;font-size:22px;border:2px solid var(--line);background:var(--card);color:var(--fg);border-radius:18px;padding:14px 22px;min-height:56px}
 button.on{border-color:var(--pri);background:var(--pri);color:#fff}
 button:focus-visible{outline:3px solid var(--pri);outline-offset:2px}
-.themes{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
-.theme{width:min(300px,80vw);padding:34px 20px;font-size:30px;color:#fff;border:0}
-.a{background:#1f4e79}.x{background:#9b1c1c}
-.cam{position:relative;width:min(92vw,720px);aspect-ratio:4/3;background:#000;border-radius:24px;overflow:hidden}
+.go{background:#9b1c1c;color:#fff;border:0;font-size:36px;padding:30px 64px;border-radius:28px}
+.cam{position:relative;height:min(70vh,720px);max-width:92vw;aspect-ratio:3/4;background:#000;border-radius:24px;overflow:hidden}
 .cam video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
 #cnt{position:absolute;inset:0;display:grid;place-items:center;font-size:200px;color:#fff;text-shadow:0 4px 24px rgba(0,0,0,.6)}
 #fl{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .35s;z-index:20}
 #result{flex-direction:row;flex-wrap:wrap;align-items:flex-start;justify-content:center}
-.stripwrap{flex:0 1 auto}
-#strip,#pv{height:min(84vh,980px);max-width:92vw;width:auto;border-radius:6px;box-shadow:0 6px 28px rgba(0,0,0,.28);background:#fff;touch-action:manipulation}
-.panel{flex:1 1 320px;max-width:460px;display:flex;flex-direction:column;gap:14px;text-align:left}
+#strip,#pv{height:min(84vh,980px);max-width:92vw;width:auto;border-radius:6px;box-shadow:0 6px 28px rgba(0,0,0,.28);background:#fff}
+.panel{flex:1 1 320px;max-width:480px;display:flex;flex-direction:column;gap:12px;text-align:left}
 .panel h2{margin:0;font-size:22px;font-weight:400;opacity:.8}
 .row{display:flex;flex-wrap:wrap;gap:10px}
+.fchips button{font-size:26px;padding:16px 22px}
 .row button{padding:10px 16px;font-size:20px}
-.stk button{font-size:34px;padding:6px 12px;min-height:56px}
+.fchips button{padding:16px 22px;font-size:26px}
 .note{font-size:16px;opacity:.65}
 </style>
 </head>
 <body>
 <section id="home">
-  <h1>포토부스</h1>
-  <p>행사를 고르고 촬영을 시작하세요. 사진은 4장 찍어요.</p>
+  <h1>메리 크리스마스</h1>
+  <p>버튼을 누르면 3초 뒤에 사진이 찍혀요</p>
+  <button class="go" onclick="start()">촬영 시작</button>
   <p id="err" style="color:#c0392b;font-size:18px;opacity:1"></p>
-  <div class="themes">
-    <button class="theme a" onclick="start('anniv')">창립기념주일</button>
-    <button class="theme x" onclick="start('xmas')">크리스마스</button>
-  </div>
 </section>
 
 <section id="shoot" hidden>
-  <p id="prog"></p>
-  <div class="cam"><video id="v" playsinline muted></video><div id="cnt"></div></div>
   <p>카메라를 보고 웃어주세요</p>
+  <div class="cam"><video id="v" playsinline muted></video><div id="cnt"></div></div>
 </section>
 
 <section id="result" hidden>
-  <div class="stripwrap">
-    <canvas id="strip" onclick="place(event)"></canvas>
+  <div>
+    <canvas id="strip"></canvas>
     <canvas id="pv" hidden></canvas>
   </div>
   <div class="panel">
+    <h2>프레임을 골라주세요</h2>
+    <div class="row fchips" id="fchips"></div>
     <h2>필터</h2>
     <div class="row" id="filters"></div>
-    <h2>스티커 (사진을 눌러 붙이세요)</h2>
-    <div class="row stk" id="stk"></div>
-    <div class="row"><button onclick="undo()">스티커 지우기</button><button id="pvbtn" onclick="togglePv()">인쇄 미리보기</button></div>
+    <div class="row"><button id="pvbtn" onclick="togglePv()">인쇄 미리보기</button></div>
     <p class="note" id="pvnote" hidden>프린터는 흑백 점으로 인쇄해요. 이 화면이 실제 출력 모양이에요.</p>
-    <div class="row"><button onclick="show('home')">처음으로</button><button disabled title="다음 단계에서 연결해요">인쇄 (준비 중)</button></div>
+    <div class="row"><button onclick="start()">다시 찍기</button><button onclick="show('home')">처음으로</button><button disabled>인쇄 (준비 중)</button></div>
   </div>
 </section>
 <div id="fl"></div>
 
 <script>
-const T={
-  anniv:{n:"창립기념주일",c:"#1f4e79",a:"#e0b43c",s:["⛪","🕊️","🎉","🙏","💐","✨"]},
-  xmas:{n:"메리 크리스마스",c:"#9b1c1c",a:"#2f7d4f",s:["🎄","⭐","🎅","🎁","❄️","🔔"]}
-};
-const F=[["none","원본"],["bw","흑백"],["sepia","세피아"],["warm","따뜻하게"],["bright","밝게"]];
-let theme="anniv",shots=[],filter="none",stickers=[],cur=null,stream=null;
+const CH="아름다운교회",EN="Beautiful Church";
+const W=704,H=1250,PX=52,PY=200,PW=600,PH=800;
 const $=id=>document.getElementById(id);
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+function star(x,cx,cy,r){x.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,q=i%2?r*.42:r;x.lineTo(cx+q*Math.cos(a),cy+q*Math.sin(a))}x.closePath();x.fill()}
+function snow(x,cx,cy,r){x.save();x.translate(cx,cy);x.lineWidth=Math.max(2,r/9);x.lineCap="round";
+  for(let i=0;i<6;i++){x.rotate(Math.PI/3);x.beginPath();x.moveTo(0,0);x.lineTo(0,-r);x.moveTo(0,-r*.6);x.lineTo(-r*.24,-r*.84);x.moveTo(0,-r*.6);x.lineTo(r*.24,-r*.84);x.stroke()}x.restore()}
+function tree(x,cx,t,w){for(let i=0;i<3;i++){const y=t+i*w*.38,ww=w*(.55+i*.22);x.beginPath();x.moveTo(cx,y);x.lineTo(cx+ww/2,y+w*.5);x.lineTo(cx-ww/2,y+w*.5);x.closePath();x.fill()}x.fillRect(cx-w*.07,t+w*1.14,w*.14,w*.2)}
+function rr(x,a,b,w,h,r){x.beginPath();x.moveTo(a+r,b);x.arcTo(a+w,b,a+w,b+h,r);x.arcTo(a+w,b+h,a,b+h,r);x.arcTo(a,b+h,a,b,r);x.arcTo(a,b,a+w,b,r);x.closePath()}
+function bauble(x,cx,cy,r){x.lineWidth=3;x.beginPath();x.moveTo(cx,36);x.lineTo(cx,cy-r);x.stroke();x.fillRect(cx-7,cy-r-8,14,10);
+  x.beginPath();x.arc(cx,cy,r,0,7);x.fill();x.strokeStyle="#fff";x.lineWidth=4;x.beginPath();x.arc(cx,cy,r*.62,Math.PI*1.1,Math.PI*1.6);x.stroke();x.strokeStyle="#000"}
+
+// 프레임 1: 눈꽃 (이중 테두리 + 눈 결정)
+function f1(x){
+  x.lineWidth=7;x.strokeRect(10,10,W-20,H-20);x.lineWidth=2;x.strokeRect(26,26,W-52,H-52);
+  x.font="66px Jua, sans-serif";x.fillText("메리 크리스마스",W/2,92);
+  x.font="30px Jua, sans-serif";x.fillText("Merry Christmas",W/2,150);
+  snow(x,84,100,30);snow(x,W-84,100,30);snow(x,64,1190,24);snow(x,W-64,1190,24);
+  snow(x,40,640,12);snow(x,W-40,640,12);snow(x,40,420,10);snow(x,W-40,860,10)
+}
+// 프레임 2: 반짝 트리 (전구 점 테두리 + 별 + 트리)
+function f2(x){
+  x.lineWidth=3;let k=0;const g=36,m=24,P=(a,b)=>{x.beginPath();x.arc(a,b,8,0,7);(k++%2)?x.fill():x.stroke()};
+  for(let a=m;a<=W-m;a+=g){P(a,m);P(a,H-m)}for(let b=m+g;b<=H-m-g;b+=g){P(m,b);P(W-m,b)}
+  star(x,W/2,72,32);
+  x.font="52px Jua, sans-serif";x.fillText("기쁘다 구주 오셨네",W/2,132);
+  x.font="26px Jua, sans-serif";x.fillText("Joy to the World",W/2,176);
+  tree(x,118,1046,70);tree(x,W-118,1046,70);star(x,W/2-150,1060,10);star(x,W/2+150,1060,10)
+}
+// 프레임 3: 캔디케인 (사선 줄무늬 테두리 + 장식 공)
+function f3(x){
+  x.save();x.beginPath();x.rect(0,0,W,H);x.rect(36,36,W-72,H-72);x.clip("evenodd");
+  for(let i=-H;i<W+H;i+=30){x.beginPath();x.moveTo(i,0);x.lineTo(i+15,0);x.lineTo(i+15+H,H);x.lineTo(i+H,H);x.closePath();x.fill()}
+  x.restore();x.lineWidth=3;x.strokeRect(36,36,W-72,H-72);
+  x.font="62px Jua, sans-serif";x.fillText("Merry Christmas",W/2,108);
+  x.font="26px Jua, sans-serif";x.fillText("임마누엘 · 하나님이 우리와 함께하시도다",W/2,160);
+  bauble(x,92,100,22);bauble(x,W-92,100,22);star(x,W/2-170,1060,10);star(x,W/2+170,1060,10)
+}
+const FR=[{n:"눈꽃",d:f1,r:0},{n:"반짝 트리",d:f2,r:30},{n:"캔디케인",d:f3,r:0}];
+const F=[["none","원본"],["bw","흑백"],["bright","밝게"],["contrast","또렷하게"]];
+let fi=0,shot=null,filter="none",stream=null;
 function show(id){["home","shoot","result"].forEach(s=>$(s).hidden=s!==id)}
 
-async function start(t){
-  theme=t;shots=[];stickers=[];filter="none";$("err").textContent="";
-  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user",width:{ideal:1280},height:{ideal:960}},audio:false})}
-  catch(e){$("err").textContent="카메라를 켤 수 없어요 ("+((e&&e.name)||"오류")+"). 앱 안의 미리보기 화면에서는 카메라가 막힐 수 있어요. 별도 브라우저 창에서 열어보세요.";return}
-  const v=$("v");v.srcObject=stream;show("shoot");await v.play();
-  for(let i=0;i<4;i++){
-    $("prog").textContent=(i+1)+" / 4";
-    for(let n=3;n>0;n--){$("cnt").textContent=n;await sleep(1000)}
-    $("cnt").textContent="";flash();shots.push(grab());await sleep(700)
+async function start(){
+  $("err").textContent="";
+  if(!stream||!stream.active){
+    try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user",width:{ideal:1280},height:{ideal:960}},audio:false});$("v").srcObject=stream}
+    catch(e){show("home");$("err").textContent="카메라를 켤 수 없어요 ("+((e&&e.name)||"오류")+"). 카메라 권한을 허용해 주세요.";return}
   }
-  stream.getTracks().forEach(k=>k.stop());
+  show("shoot");const v=$("v");try{await v.play()}catch(e){}
+  for(let n=3;n>0;n--){$("cnt").textContent=n;await sleep(1000)}
+  $("cnt").textContent="";flash();shot=grab();await sleep(500);
   try{await document.fonts.load("52px Jua")}catch(e){}
-  cur=T[theme].s[0];buildPanel();draw();$("pv").hidden=true;$("strip").hidden=false;$("pvnote").hidden=true;show("result")
+  fi=0;filter="none";buildPanel();draw();
+  $("pv").hidden=true;$("strip").hidden=false;$("pvnote").hidden=true;$("pvbtn").textContent="인쇄 미리보기";show("result")
 }
 function flash(){const f=$("fl");f.style.opacity=1;setTimeout(()=>f.style.opacity=0,120)}
 function grab(){
-  const v=$("v"),W=640,H=480,c=document.createElement("canvas");c.width=W;c.height=H;
-  const x=c.getContext("2d"),vw=v.videoWidth,vh=v.videoHeight,r=W/H;
+  const v=$("v"),w=640,h=854,c=document.createElement("canvas");c.width=w;c.height=h;
+  const x=c.getContext("2d"),vw=v.videoWidth,vh=v.videoHeight,r=w/h;
   let sw=vw,sh=vw/r;if(sh>vh){sh=vh;sw=vh*r}
-  x.translate(W,0);x.scale(-1,1);x.drawImage(v,(vw-sw)/2,(vh-sh)/2,sw,sh,0,0,W,H);return c
+  x.translate(w,0);x.scale(-1,1);x.drawImage(v,(vw-sw)/2,(vh-sh)/2,sw,sh,0,0,w,h);return c
 }
 function fx(src){
   const c=document.createElement("canvas");c.width=src.width;c.height=src.height;
@@ -112,45 +139,36 @@ function fx(src){
     for(let i=0;i<p.length;i+=4){
       let r=p[i],g=p[i+1],b=p[i+2];const l=.3*r+.59*g+.11*b;
       if(filter==="bw"){r=g=b=l*1.05}
-      else if(filter==="sepia"){r=l*1.07+20;g=l*.95+8;b=l*.75}
-      else if(filter==="warm"){r*=1.1;g*=1.03;b*=.88}
-      else if(filter==="bright"){r=r*1.15+15;g=g*1.15+15;b=b*1.15+15}
+      else if(filter==="bright"){r=r*1.2+18;g=g*1.2+18;b=b*1.2+18}
+      else if(filter==="contrast"){const t=(l-110)*1.5+128;r=g=b=t}
       p[i]=r;p[i+1]=g;p[i+2]=b
     }
     x.putImageData(d,0,0)
   }
   return c
 }
-const W=704,H=2200;
 function draw(){
-  const t=T[theme],c=$("strip"),x=c.getContext("2d");
+  const f=FR[fi],c=$("strip"),x=c.getContext("2d");
   c.width=W;c.height=H;
   x.fillStyle="#fff";x.fillRect(0,0,W,H);
-  x.fillStyle=t.c;x.fillRect(0,0,W,110);
-  x.fillStyle="#fff";x.font="52px Jua, sans-serif";x.textAlign="center";x.textBaseline="middle";
-  x.fillText(t.n,W/2,58);
-  shots.forEach((s,i)=>x.drawImage(fx(s),32,126+i*496,640,480));
-  x.fillStyle=t.c;x.font="34px Jua, sans-serif";
-  x.fillText(new Date().toLocaleDateString("ko-KR"),W/2,2150);
-  x.font="96px sans-serif";
-  stickers.forEach(s=>x.fillText(s.e,s.x,s.y));
-  x.strokeStyle=t.a;x.lineWidth=10;x.strokeRect(5,5,W-10,H-10);
+  x.fillStyle="#000";x.strokeStyle="#000";x.textAlign="center";x.textBaseline="middle";
+  f.d(x);
+  x.save();rr(x,PX,PY,PW,PH,f.r);x.clip();x.drawImage(fx(shot),PX,PY,PW,PH);x.restore();
+  x.lineWidth=8;rr(x,PX,PY,PW,PH,f.r);x.stroke();
+  x.fillStyle="#000";x.strokeStyle="#000";
+  x.font="54px Jua, sans-serif";x.fillText(CH,W/2,1096);
+  x.font="32px Jua, sans-serif";x.fillText(EN,W/2,1146);
+  x.font="24px Jua, sans-serif";x.fillText(new Date().toLocaleDateString("ko-KR"),W/2,1192);
   if(!$("pv").hidden)dither()
 }
 function buildPanel(){
+  $("fchips").innerHTML="";
+  FR.forEach((f,i)=>{const b=document.createElement("button");b.textContent=f.n;b.className=i===fi?"on":"";
+    b.onclick=()=>{fi=i;[...$("fchips").children].forEach(e=>e.className="");b.className="on";draw()};$("fchips").appendChild(b)});
   $("filters").innerHTML="";
   F.forEach(([k,n])=>{const b=document.createElement("button");b.textContent=n;b.className=k===filter?"on":"";
-    b.onclick=()=>{filter=k;[...$("filters").children].forEach(e=>e.className="");b.className="on";draw()};$("filters").appendChild(b)});
-  $("stk").innerHTML="";
-  T[theme].s.forEach(e=>{const b=document.createElement("button");b.textContent=e;b.className=e===cur?"on":"";
-    b.onclick=()=>{cur=e;[...$("stk").children].forEach(k=>k.className="");b.className="on"};$("stk").appendChild(b)})
+    b.onclick=()=>{filter=k;[...$("filters").children].forEach(e=>e.className="");b.className="on";draw()};$("filters").appendChild(b)})
 }
-function place(ev){
-  if(!$("pv").hidden)return;
-  const c=$("strip"),r=c.getBoundingClientRect();
-  stickers.push({e:cur,x:(ev.clientX-r.left)*W/r.width,y:(ev.clientY-r.top)*H/r.height});draw()
-}
-function undo(){stickers.pop();draw()}
 function togglePv(){
   const on=$("pv").hidden;$("pv").hidden=!on;$("strip").hidden=on;$("pvnote").hidden=!on;
   $("pvbtn").textContent=on?"편집으로 돌아가기":"인쇄 미리보기";if(on)dither()
